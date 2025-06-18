@@ -19,6 +19,7 @@ jobs:
           script: |
             cd /home/ubuntu
 
+            # Clone if not already cloned
             if [ ! -d "NoteVault" ]; then
               git clone https://${{ secrets.GH_PAT }}@github.com/INISHKASHYAP/NoteVault.git
             fi
@@ -26,7 +27,16 @@ jobs:
             cd NoteVault
             git pull origin main
 
+            # Install dependencies
             npm install
-            npm run build
 
-            sudo cp -r build/* /var/www/html/
+            # Install PM2 if not installed
+            if ! command -v pm2 &> /dev/null; then
+              sudo npm install -g pm2
+            fi
+
+            # Stop previous instance
+            pm2 delete notevault || true
+
+            # Start the app with PM2
+            pm2 start index.js --name notevault
